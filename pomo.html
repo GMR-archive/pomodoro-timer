@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>뽀모도로 타이머</title>
+    <style>
+        :root {
+            --bg-color: #f5f5f5;
+            --container-bg: white;
+            --text-color: #333;
+            --border-color: #eee;
+            --button-color: #4CAF50;
+            --button-hover: #45a049;
+            --description-bg: #f8f8f8;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --container-bg: #2d2d2d;
+            --text-color: #ffffff;
+            --border-color: #404040;
+            --button-color: #45a049;
+            --button-hover: #4CAF50;
+            --description-bg: #363636;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            color: var(--text-color);
+        }
+
+        .container {
+            background-color: var(--container-bg);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .description {
+            font-size: 14px;
+            text-align: center;
+            margin: 10px 0 20px 0;
+            padding: 15px;
+            background-color: var(--description-bg);
+            border-radius: 8px;
+        }
+
+        .timer {
+            font-size: 64px;
+            text-align: center;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .controls button {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background-color: var(--button-color);
+            color: white;
+            font-size: 16px;
+        }
+
+        .controls button:hover {
+            background-color: var(--button-hover);
+        }
+
+        .controls button:disabled {
+            background-color: #cccccc;
+        }
+
+        .settings {
+            margin-top: 20px;
+            padding: 15px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .settings label {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+        }
+
+        .settings input {
+            width: 80px;
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid var(--border-color);
+            background-color: var(--container-bg);
+            color: var(--text-color);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background-color: var(--description-bg);
+            border-radius: 6px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            background-color: var(--button-color);
+            width: 0%;
+        }
+
+        .stats {
+            margin-top: 20px;
+            text-align: center;
+            padding: 15px;
+            background-color: var(--description-bg);
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="text-align: center;">뽀모도로 타이머</h1>
+        
+        <div class="description">
+            뽀모도로 기법은 25분 집중 작업 후 5분 휴식을 취하는 시간 관리 방법입니다.
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress" id="progress"></div>
+        </div>
+
+        <div class="timer" id="timer">25:00</div>
+
+        <div class="controls">
+            <button id="startBtn" onclick="startTimer()">시작</button>
+            <button id="pauseBtn" onclick="pauseTimer()" disabled>일시정지</button>
+            <button id="resetBtn" onclick="resetTimer()">리셋</button>
+        </div>
+
+        <div class="settings">
+            <label>
+                작업 시간 (분)
+                <input type="number" id="workTime" value="25" min="1" max="60">
+            </label>
+            <label>
+                휴식 시간 (분)
+                <input type="number" id="breakTime" value="5" min="1" max="30">
+            </label>
+        </div>
+
+        <div class="stats">
+            <p>완료한 뽀모도로: <span id="completedPomodoros">0</span></p>
+            <p>오늘의 총 작업시간: <span id="totalWorkTime">0</span>분</p>
+        </div>
+    </div>
+
+    <script>
+        let timeLeft;
+        let timerId = null;
+        let isWorkTime = true;
+        let completedPomodoros = 0;
+        let totalWorkTime = 0;
+
+        const timerDisplay = document.getElementById('timer');
+        const progressBar = document.getElementById('progress');
+        const startButton = document.getElementById('startBtn');
+        const pauseButton = document.getElementById('pauseBtn');
+
+        function getWorkTime() {
+            return document.getElementById('workTime').value * 60;
+        }
+
+        function getBreakTime() {
+            return document.getElementById('breakTime').value * 60;
+        }
+
+        function updateTimer() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            const totalTime = isWorkTime ? getWorkTime() : getBreakTime();
+            progressBar.style.width = `${((totalTime - timeLeft) / totalTime) * 100}%`;
+        }
+
+        function startTimer() {
+            if (timerId === null) {
+                timeLeft = timeLeft || getWorkTime();
+                timerId = setInterval(() => {
+                    timeLeft--;
+                    updateTimer();
+                    if (timeLeft <= 0) {
+                        clearInterval(timerId);
+                        timerId = null;
+                        if (isWorkTime) {
+                            completedPomodoros++;
+                            totalWorkTime += parseInt(document.getElementById('workTime').value);
+                            document.getElementById('completedPomodoros').textContent = completedPomodoros;
+                            document.getElementById('totalWorkTime').textContent = totalWorkTime;
+                            timeLeft = getBreakTime();
+                            if (window.AppInventor) {
+                                window.AppInventor.setWebViewString("WORK_END");
+                            }
+                        } else {
+                            timeLeft = getWorkTime();
+                            if (window.AppInventor) {
+                                window.AppInventor.setWebViewString("BREAK_END");
+                            }
+                        }
+                        isWorkTime = !isWorkTime;
+                        updateTimer();
+                        startTimer();
+                    }
+                }, 1000);
+                startButton.disabled = true;
+                pauseButton.disabled = false;
+            }
+        }
+
+        function pauseTimer() {
+            if (timerId !== null) {
+                clearInterval(timerId);
+                timerId = null;
+                startButton.disabled = false;
+                pauseButton.disabled = true;
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timerId);
+            timerId = null;
+            isWorkTime = true;
+            timeLeft = getWorkTime();
+            updateTimer();
+            startButton.disabled = false;
+            pauseButton.disabled = true;
+        }
+    </script>
+</body>
+</html>
