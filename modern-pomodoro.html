@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>뽀모도로 타이머</title>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --container-bg: #f8fafc;
+            --text-color: #1e293b;
+            --border-color: #e2e8f0;
+            --button-primary: #3b82f6;
+            --button-hover: #2563eb;
+            --accent-color: #f43f5e;
+            --description-bg: #f1f5f9;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #0f172a;
+            --container-bg: #1e293b;
+            --text-color: #f1f5f9;
+            --border-color: #334155;
+            --button-primary: #3b82f6;
+            --button-hover: #60a5fa;
+            --accent-color: #f43f5e;
+            --description-bg: #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: var(--container-bg);
+            border-radius: 24px;
+            padding: 32px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: none;
+            background-color: var(--container-bg);
+            color: var(--text-color);
+            cursor: pointer;
+            font-size: 24px;
+            box-shadow: 0 2px 4px rgb(0 0 0 / 0.1);
+            transition: transform 0.2s ease;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 24px;
+            color: var(--text-color);
+        }
+
+        .timer-display {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            margin: 0 auto 32px;
+        }
+
+        .timer {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 64px;
+            font-weight: 700;
+            color: var(--text-color);
+            z-index: 2;
+        }
+
+        .progress-ring {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring circle {
+            fill: none;
+            stroke-width: 8;
+            stroke-linecap: round;
+        }
+
+        .progress-ring .background {
+            stroke: var(--description-bg);
+        }
+
+        .progress-ring .progress {
+            stroke: var(--button-primary);
+            transition: stroke-dashoffset 1s linear;
+        }
+
+        .controls {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-bottom: 32px;
+        }
+
+        .controls button {
+            padding: 16px 32px;
+            border: none;
+            border-radius: 12px;
+            background-color: var(--button-primary);
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .controls button:hover {
+            background-color: var(--button-hover);
+            transform: translateY(-2px);
+        }
+
+        .controls button:disabled {
+            background-color: var(--border-color);
+            transform: none;
+            cursor: not-allowed;
+        }
+
+        .settings {
+            background-color: var(--description-bg);
+            padding: 24px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+        }
+
+        .settings label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            font-weight: 500;
+        }
+
+        .settings input {
+            width: 80px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background-color: var(--container-bg);
+            color: var(--text-color);
+            font-size: 16px;
+        }
+
+        .stats {
+            text-align: center;
+            padding: 24px;
+            background-color: var(--description-bg);
+            border-radius: 16px;
+        }
+
+        .stats p {
+            margin: 8px 0;
+            font-size: 16px;
+        }
+
+        .stats span {
+            font-weight: 600;
+            color: var(--button-primary);
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="테마 변경">
+        🌓
+    </button>
+
+    <div class="container">
+        <h1>뽀모도로 타이머</h1>
+        
+        <div class="timer-display">
+            <svg class="progress-ring" viewBox="0 0 100 100">
+                <circle class="background" cx="50" cy="50" r="45"/>
+                <circle class="progress" cx="50" cy="50" r="45"/>
+            </svg>
+            <div class="timer" id="timer">25:00</div>
+        </div>
+
+        <div class="controls">
+            <button id="startBtn" onclick="startTimer()">시작</button>
+            <button id="pauseBtn" onclick="pauseTimer()" disabled>일시정지</button>
+            <button id="resetBtn" onclick="resetTimer()">리셋</button>
+        </div>
+
+        <div class="settings">
+            <label>
+                작업 시간 (분)
+                <input type="number" id="workTime" value="25" min="1" max="60">
+            </label>
+            <label>
+                휴식 시간 (분)
+                <input type="number" id="breakTime" value="5" min="1" max="30">
+            </label>
+        </div>
+
+        <div class="stats">
+            <p>완료한 뽀모도로: <span id="completedPomodoros">0</span></p>
+            <p>오늘의 총 작업시간: <span id="totalWorkTime">0</span>분</p>
+        </div>
+    </div>
+
+    <script>
+        let timeLeft;
+        let timerId = null;
+        let isWorkTime = true;
+        let completedPomodoros = 0;
+        let totalWorkTime = 0;
+
+        const timerDisplay = document.getElementById('timer');
+        const progressRing = document.querySelector('.progress-ring .progress');
+        const startButton = document.getElementById('startBtn');
+        const pauseButton = document.getElementById('pauseBtn');
+        const resetButton = document.getElementById('resetBtn');
+
+        // 원형 프로그레스 설정
+        const radius = 45;
+        const circumference = 2 * Math.PI * radius;
+        progressRing.style.strokeDasharray = circumference;
+        progressRing.style.strokeDashoffset = 0;
+
+        function getWorkTime() {
+            return document.getElementById('workTime').value * 60;
+        }
+
+        function getBreakTime() {
+            return document.getElementById('breakTime').value * 60;
+        }
+
+        function updateTimer() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            const totalTime = isWorkTime ? getWorkTime() : getBreakTime();
+            const progress = (totalTime - timeLeft) / totalTime;
+            const offset = circumference * (1 - progress);
+            progressRing.style.strokeDashoffset = offset;
+        }
+
+        function startTimer() {
+            if (timerId === null) {
+                timeLeft = timeLeft || getWorkTime();
+                timerId = setInterval(() => {
+                    timeLeft--;
+                    updateTimer();
+
+                    if (timeLeft <= 0) {
+                        clearInterval(timerId);
+                        timerId = null;
+                        
+                        if (isWorkTime) {
+                            completedPomodoros++;
+                            totalWorkTime += parseInt(document.getElementById('workTime').value);
+                            document.getElementById('completedPomodoros').textContent = completedPomodoros;
+                            document.getElementById('totalWorkTime').textContent = totalWorkTime;
+                            timeLeft = getBreakTime();
+                            
+                            if (window.AppInventor) {
+                                window.AppInventor.setWebViewString("WORK_END");
+                            }
+                        } else {
+                            timeLeft = getWorkTime();
+                            if (window.AppInventor) {
+                                window.AppInventor.setWebViewString("BREAK_END");
+                            }
+                        }
+                        isWorkTime = !isWorkTime;
+                        updateTimer();
+                        startTimer();
+                    }
+                }, 1000);
+
+                startButton.disabled = true;
+                pauseButton.disabled = false;
+            }
+        }
+
+        function pauseTimer() {
+            if (timerId !== null) {
+                clearInterval(timerId);
+                timerId = null;
+                startButton.disabled = false;
+                pauseButton.disabled = true;
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timerId);
+            timerId = null;
+            isWorkTime = true;
+            timeLeft = getWorkTime();
+            updateTimer();
+            startButton.disabled = false;
+            pauseButton.disabled = true;
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // 초기 테마 설정
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+
+        // 페이지 로드 시 실행
+        document.addEventListener('DOMContentLoaded', () => {
+            resetTimer();
+        });
+    </script>
+</body>
+</html>
